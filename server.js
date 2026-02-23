@@ -20,9 +20,13 @@ CONFIGURATION
 =========================================
 */
 
-// 🔐 Move these to ENV in production
-const ONESIGNAL_APP_ID = "52875f54-3c4d-457e-93e8-301f06d486c1";
+// ⭐ Production ma ENV use karjo
+const ONESIGNAL_APP_ID =
+  process.env.ONESIGNAL_APP_ID ||
+  "52875f54-3c4d-457e-93e8-301f06d486c1";
+
 const ONESIGNAL_REST_API_KEY =
+  process.env.ONESIGNAL_REST_API_KEY ||
   "os_v2_app_kkdv6vb4jvcx5e7igapqnvegyh62y2gtcfhuinup2gx6m75s62s2wq2p5nbrlnd6lk2jfu67xlmlwwsceunrsa3fo3ncwzsexvrlzpy";
 
 /*
@@ -36,19 +40,19 @@ app.get("/", (req, res) => {
 
 /*
 =========================================
-HEALTH CHECK (Render / uptime monitor)
+HEALTH CHECK
 =========================================
 */
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
-    serverTime: new Date(),
+    time: new Date(),
   });
 });
 
 /*
 =========================================
-SEND PUSH TO DOCTORS
+🔥 SEND PUSH TO DOCTORS
 =========================================
 */
 async function sendDoctorNotification(patientName, category) {
@@ -58,7 +62,7 @@ async function sendDoctorNotification(patientName, category) {
     const payload = {
       app_id: ONESIGNAL_APP_ID,
 
-      // ⭐ Only doctor devices
+      // ✅ doctor devices only
       filters: [
         {
           field: "tag",
@@ -93,10 +97,10 @@ async function sendDoctorNotification(patientName, category) {
       }
     );
 
-    console.log("✅ OneSignal success:", response.data.id);
+    console.log("✅ OneSignal response:", response.data);
     return true;
   } catch (err) {
-    console.log("❌ OneSignal error:");
+    console.log("❌ OneSignal Error:");
     console.log(err.response?.data || err.message);
     return false;
   }
@@ -104,15 +108,22 @@ async function sendDoctorNotification(patientName, category) {
 
 /*
 =========================================
-TEST PUSH API (for debugging)
+🔥 TEST PUSH API
+Open in browser:
+https://your-domain/test-push
 =========================================
 */
 app.get("/test-push", async (req, res) => {
-  const sent = await sendDoctorNotification("Test Patient", "ECG");
+  console.log("🧪 TEST PUSH API HIT");
+
+  const success = await sendDoctorNotification(
+    "Test Patient",
+    "ECG"
+  );
 
   res.json({
-    success: sent,
-    message: sent ? "Push sent" : "Push failed",
+    success,
+    message: success ? "Test push sent" : "Push failed",
   });
 });
 
@@ -135,21 +146,12 @@ app.post("/book-appointment", async (req, res) => {
       });
     }
 
-    /*
-    =============================
-    SAVE DATABASE (future)
-    =============================
-    */
     console.log("📌 Appointment saved:", patientName, category);
 
-    /*
-    =============================
-    SEND PUSH (NON BLOCKING)
-    =============================
-    */
+    // ✅ async push (non-blocking)
     sendDoctorNotification(patientName, category)
       .then((ok) => console.log("📨 Push result:", ok))
-      .catch((e) => console.log("Push async error:", e));
+      .catch((e) => console.log("Push error:", e));
 
     return res.json({
       success: true,
