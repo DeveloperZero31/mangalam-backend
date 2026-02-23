@@ -25,9 +25,7 @@ const ONESIGNAL_APP_ID =
   process.env.ONESIGNAL_APP_ID ||
   "52875f54-3c4d-457e-93e8-301f06d486c1";
 
-const ONESIGNAL_REST_API_KEY =
-  process.env.ONESIGNAL_REST_API_KEY ||
-  "os_v2_app_kkdv6vb4jvcx5e7igapqnvegygjdwvebmngu6i52wc64qreht6lbaar6kzeobuuu37fapug27cvmpiqsjaswughwc7mdxc54mbqtfci";
+const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
 
 /*
 =========================================
