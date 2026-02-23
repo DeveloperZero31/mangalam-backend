@@ -27,7 +27,7 @@ const ONESIGNAL_APP_ID =
 
 const ONESIGNAL_REST_API_KEY =
   process.env.ONESIGNAL_REST_API_KEY ||
-  "os_v2_app_kkdv6vb4jvcx5e7igapqnvegyh62y2gtcfhuinup2gx6m75s62s2wq2p5nbrlnd6lk2jfu67xlmlwwsceunrsa3fo3ncwzsexvrlzpy";
+  "os_v2_app_kkdv6vb4jvcx5e7igapqnvegygjdwvebmngu6i52wc64qreht6lbaar6kzeobuuu37fapug27cvmpiqsjaswughwc7mdxc54mbqtfci";
 
 /*
 =========================================
