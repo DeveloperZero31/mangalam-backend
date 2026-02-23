@@ -16,16 +16,24 @@ app.use(express.json());
 
 /*
 =========================================
-CONFIGURATION
+CONFIG (ONLY ENV VARIABLES)
 =========================================
 */
 
-// ⭐ Production ma ENV use karjo
-const ONESIGNAL_APP_ID =
-  process.env.ONESIGNAL_APP_ID ||
-  "52875f54-3c4d-457e-93e8-301f06d486c1";
-
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+
+/*
+=========================================
+STARTUP VALIDATION (IMPORTANT)
+=========================================
+*/
+if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
+  console.error("❌ Missing OneSignal ENV variables");
+  console.error("Please set:");
+  console.error("ONESIGNAL_APP_ID");
+  console.error("ONESIGNAL_REST_API_KEY");
+}
 
 /*
 =========================================
@@ -60,7 +68,6 @@ async function sendDoctorNotification(patientName, category) {
     const payload = {
       app_id: ONESIGNAL_APP_ID,
 
-      // ✅ doctor devices only
       filters: [
         {
           field: "tag",
@@ -87,7 +94,7 @@ async function sendDoctorNotification(patientName, category) {
       "https://onesignal.com/api/v1/notifications",
       payload,
       {
-        timeout: 8000,
+        timeout: 10000,
         headers: {
           Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
           "Content-Type": "application/json",
@@ -95,20 +102,27 @@ async function sendDoctorNotification(patientName, category) {
       }
     );
 
-    console.log("✅ OneSignal response:", response.data);
+    console.log("✅ Push sent:", response.data.id);
     return true;
   } catch (err) {
     console.log("❌ OneSignal Error:");
-    console.log(err.response?.data || err.message);
+
+    if (err.response) {
+      console.log("Status:", err.response.status);
+      console.log("Data:", err.response.data);
+    } else {
+      console.log(err.message);
+    }
+
     return false;
   }
 }
 
 /*
 =========================================
-🔥 TEST PUSH API
+🧪 TEST PUSH API
 Open in browser:
-https://your-domain/test-push
+https://mangalam-backend.onrender.com/test-push
 =========================================
 */
 app.get("/test-push", async (req, res) => {
@@ -146,7 +160,7 @@ app.post("/book-appointment", async (req, res) => {
 
     console.log("📌 Appointment saved:", patientName, category);
 
-    // ✅ async push (non-blocking)
+    // async push (non-blocking)
     sendDoctorNotification(patientName, category)
       .then((ok) => console.log("📨 Push result:", ok))
       .catch((e) => console.log("Push error:", e));
@@ -155,6 +169,7 @@ app.post("/book-appointment", async (req, res) => {
       success: true,
       message: "Appointment booked",
     });
+
   } catch (error) {
     console.log("❌ Server error:", error.message);
 
