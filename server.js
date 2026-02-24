@@ -69,6 +69,22 @@ async function sendDoctorNotification(
   try {
     console.log("📡 Sending push to doctors...");
 
+    // ✅ CATEGORY FORMAT FIX
+    function formatCategory(cat) {
+      if (!cat) return "General";
+
+      const map = {
+        bookDoctor: "Doctor",
+        xray: "X-Ray",
+        ecg: "ECG",
+        call: "Call",
+      };
+
+      return map[cat] || cat;
+    }
+
+    const formattedCategory = formatCategory(category);
+
     const payload = {
       app_id: ONESIGNAL_APP_ID,
 
@@ -81,12 +97,11 @@ async function sendDoctorNotification(
         },
       ],
 
-      // ✅ Dynamic Title
+      // ✅ Proper Title
       headings: {
-        en: `New ${category} appointment booked`,
+        en: `New ${formattedCategory} appointment booked`,
       },
 
-      // ✅ Clean Description
       contents: {
         en:
           `Patient: ${patientName}` +
@@ -97,7 +112,7 @@ async function sendDoctorNotification(
       data: {
         screen: "doctorDashboard",
         patientName,
-        category,
+        category: formattedCategory,
         date,
         time,
       },
