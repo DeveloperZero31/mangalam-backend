@@ -81,13 +81,14 @@ async function sendDoctorNotification(
         },
       ],
 
+      // ✅ Dynamic Title
       headings: {
-        en: "Mangalam Hospital — New Appointment",
+        en: `New ${category} appointment booked`,
       },
 
+      // ✅ Clean Description
       contents: {
         en:
-          `New ${category} appointment booked\n` +
           `Patient: ${patientName}` +
           (date ? `\nDate: ${date}` : "") +
           (time ? `\nTime: ${time}` : ""),
