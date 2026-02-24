@@ -19,13 +19,12 @@ app.use(express.json());
 CONFIG (ONLY ENV VARIABLES)
 =========================================
 */
-
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
 
 /*
 =========================================
-STARTUP VALIDATION (IMPORTANT)
+STARTUP VALIDATION
 =========================================
 */
 if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
@@ -73,7 +72,6 @@ async function sendDoctorNotification(
     const payload = {
       app_id: ONESIGNAL_APP_ID,
 
-      // 🎯 Only doctor devices
       filters: [
         {
           field: "tag",
@@ -83,12 +81,10 @@ async function sendDoctorNotification(
         },
       ],
 
-      // ⭐ Professional Title
       headings: {
         en: "Mangalam Hospital — New Appointment",
       },
 
-      // ⭐ Detailed Description
       contents: {
         en:
           `New ${category} appointment booked\n` +
@@ -97,7 +93,6 @@ async function sendDoctorNotification(
           (time ? `\nTime: ${time}` : ""),
       },
 
-      // 🔔 Click navigation
       data: {
         screen: "doctorDashboard",
         patientName,
@@ -106,14 +101,8 @@ async function sendDoctorNotification(
         time,
       },
 
-      // 🔊 Custom sound (optional)
       android_sound: "notification",
-
-      // 🟢 Android small icon (must exist in app drawable)
       small_icon: "ic_stat_onesignal_default",
-
-      // 🖼 Optional hospital logo (hosted URL)
-      // large_icon: "https://yourdomain.com/logo.png",
     };
 
     const response = await axios.post(
@@ -146,8 +135,6 @@ async function sendDoctorNotification(
 /*
 =========================================
 🧪 TEST PUSH API
-Open in browser:
-https://mangalam-backend.onrender.com/test-push
 =========================================
 */
 app.get("/test-push", async (req, res) => {
@@ -155,7 +142,9 @@ app.get("/test-push", async (req, res) => {
 
   const success = await sendDoctorNotification(
     "Test Patient",
-    "ECG"
+    "ECG",
+    "24 Feb 2026",
+    "10:30 AM"
   );
 
   res.json({
@@ -174,7 +163,7 @@ app.post("/book-appointment", async (req, res) => {
     console.log("🔥 API HIT");
     console.log("📦 Body:", req.body);
 
-    const { patientName, category } = req.body;
+    const { patientName, category, date, time } = req.body;
 
     if (!patientName) {
       return res.status(400).json({
@@ -185,8 +174,8 @@ app.post("/book-appointment", async (req, res) => {
 
     console.log("📌 Appointment saved:", patientName, category);
 
-    // async push (non-blocking)
-    sendDoctorNotification(patientName, category)
+    // non-blocking push
+    sendDoctorNotification(patientName, category, date, time)
       .then((ok) => console.log("📨 Push result:", ok))
       .catch((e) => console.log("Push error:", e));
 
