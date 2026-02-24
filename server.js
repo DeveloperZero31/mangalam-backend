@@ -61,13 +61,19 @@ app.get("/health", (req, res) => {
 🔥 SEND PUSH TO DOCTORS
 =========================================
 */
-async function sendDoctorNotification(patientName, category) {
+async function sendDoctorNotification(
+  patientName,
+  category,
+  date = "",
+  time = ""
+) {
   try {
     console.log("📡 Sending push to doctors...");
 
     const payload = {
       app_id: ONESIGNAL_APP_ID,
 
+      // 🎯 Only doctor devices
       filters: [
         {
           field: "tag",
@@ -77,17 +83,37 @@ async function sendDoctorNotification(patientName, category) {
         },
       ],
 
+      // ⭐ Professional Title
       headings: {
-        en: "New Appointment Booked",
+        en: "Mangalam Hospital — New Appointment",
       },
 
+      // ⭐ Detailed Description
       contents: {
-        en: `New appointment from ${patientName} (${category})`,
+        en:
+          `New ${category} appointment booked\n` +
+          `Patient: ${patientName}` +
+          (date ? `\nDate: ${date}` : "") +
+          (time ? `\nTime: ${time}` : ""),
       },
 
+      // 🔔 Click navigation
       data: {
         screen: "doctorDashboard",
+        patientName,
+        category,
+        date,
+        time,
       },
+
+      // 🔊 Custom sound (optional)
+      android_sound: "notification",
+
+      // 🟢 Android small icon (must exist in app drawable)
+      small_icon: "ic_stat_onesignal_default",
+
+      // 🖼 Optional hospital logo (hosted URL)
+      // large_icon: "https://yourdomain.com/logo.png",
     };
 
     const response = await axios.post(
@@ -104,16 +130,15 @@ async function sendDoctorNotification(patientName, category) {
 
     console.log("✅ Push sent:", response.data.id);
     return true;
+
   } catch (err) {
     console.log("❌ OneSignal Error:");
-
     if (err.response) {
       console.log("Status:", err.response.status);
       console.log("Data:", err.response.data);
     } else {
       console.log(err.message);
     }
-
     return false;
   }
 }
