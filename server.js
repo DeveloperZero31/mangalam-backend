@@ -16,11 +16,14 @@ app.use(express.json());
 
 /*
 =========================================
-CONFIG (ONLY ENV VARIABLES)
+ENV CONFIG
 =========================================
 */
 const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID;
 const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY;
+
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN;
+const PHONE_NUMBER_ID = process.env.PHONE_NUMBER_ID;
 
 /*
 =========================================
@@ -28,10 +31,11 @@ STARTUP VALIDATION
 =========================================
 */
 if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-  console.error("❌ Missing OneSignal ENV variables");
-  console.error("Please set:");
-  console.error("ONESIGNAL_APP_ID");
-  console.error("ONESIGNAL_REST_API_KEY");
+  console.log("⚠️ Missing OneSignal ENV variables");
+}
+
+if (!WHATSAPP_TOKEN || !PHONE_NUMBER_ID) {
+  console.log("⚠️ Missing WhatsApp ENV variables");
 }
 
 /*
@@ -69,7 +73,6 @@ async function sendDoctorNotification(
   try {
     console.log("📡 Sending push to doctors...");
 
-    // ✅ CATEGORY FORMAT FIX
     function formatCategory(cat) {
       if (!cat) return "General";
 
@@ -97,7 +100,6 @@ async function sendDoctorNotification(
         },
       ],
 
-      // ✅ Proper Title
       headings: {
         en: `New ${formattedCategory} appointment booked`,
       },
@@ -125,7 +127,6 @@ async function sendDoctorNotification(
       "https://onesignal.com/api/v1/notifications",
       payload,
       {
-        timeout: 10000,
         headers: {
           Authorization: `Basic ${ONESIGNAL_REST_API_KEY}`,
           "Content-Type": "application/json",
@@ -137,14 +138,74 @@ async function sendDoctorNotification(
     return true;
 
   } catch (err) {
-    console.log("❌ OneSignal Error:");
+    console.log("❌ OneSignal Error");
+
     if (err.response) {
-      console.log("Status:", err.response.status);
-      console.log("Data:", err.response.data);
+      console.log(err.response.data);
     } else {
       console.log(err.message);
     }
+
     return false;
+  }
+}
+
+/*
+=========================================
+📲 SEND WHATSAPP TO PATIENT
+=========================================
+*/
+async function sendPatientWhatsapp(
+  patientName,
+  doctor,
+  date,
+  time,
+  mobile
+) {
+  try {
+
+    console.log("📲 Sending WhatsApp to patient");
+
+    await axios.post(
+      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: "whatsapp",
+        to: mobile,
+        type: "template",
+        template: {
+          name: "appointment_confirmation",
+          language: { code: "en" },
+          components: [
+            {
+              type: "body",
+              parameters: [
+                { type: "text", text: patientName },
+                { type: "text", text: doctor },
+                { type: "text", text: date },
+                { type: "text", text: time }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    console.log("✅ WhatsApp sent");
+
+  } catch (err) {
+    console.log("❌ WhatsApp Error");
+
+    if (err.response) {
+      console.log(err.response.data);
+    } else {
+      console.log(err.message);
+    }
   }
 }
 
@@ -154,7 +215,6 @@ async function sendDoctorNotification(
 =========================================
 */
 app.get("/test-push", async (req, res) => {
-  console.log("🧪 TEST PUSH API HIT");
 
   const success = await sendDoctorNotification(
     "Test Patient",
@@ -167,6 +227,7 @@ app.get("/test-push", async (req, res) => {
     success,
     message: success ? "Test push sent" : "Push failed",
   });
+
 });
 
 /*
@@ -176,24 +237,37 @@ BOOK APPOINTMENT API
 */
 app.post("/book-appointment", async (req, res) => {
   try {
-    console.log("🔥 API HIT");
+
+    console.log("🔥 Appointment API HIT");
     console.log("📦 Body:", req.body);
 
-    const { patientName, category, date, time } = req.body;
+    const {
+      patientName,
+      category,
+      doctor,
+      date,
+      time,
+      mobile
+    } = req.body;
 
-    if (!patientName) {
+    if (!patientName || !mobile) {
       return res.status(400).json({
         success: false,
-        message: "patientName required",
+        message: "patientName and mobile required",
       });
     }
 
     console.log("📌 Appointment saved:", patientName, category);
 
-    // non-blocking push
+    // Doctor push
     sendDoctorNotification(patientName, category, date, time)
       .then((ok) => console.log("📨 Push result:", ok))
       .catch((e) => console.log("Push error:", e));
+
+    // Patient WhatsApp
+    sendPatientWhatsapp(patientName, doctor, date, time, mobile)
+      .then(() => console.log("📲 WhatsApp done"))
+      .catch((e) => console.log("WhatsApp error:", e));
 
     return res.json({
       success: true,
@@ -201,12 +275,14 @@ app.post("/book-appointment", async (req, res) => {
     });
 
   } catch (error) {
+
     console.log("❌ Server error:", error.message);
 
     return res.status(500).json({
       success: false,
       message: "Server error",
     });
+
   }
 });
 
