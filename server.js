@@ -166,35 +166,36 @@ async function sendPatientWhatsapp(
 
     console.log("📲 Sending WhatsApp to patient");
 
-    await axios.post(
-      `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
-      {
-        messaging_product: "whatsapp",
-        to: mobile,
-        type: "template",
-        template: {
-          name: "appointment_confirmation",
-          language: { code: "en" },
-          components: [
-            {
-              type: "body",
-              parameters: [
-                { type: "text", text: patientName },
-                { type: "text", text: doctor },
-                { type: "text", text: date },
-                { type: "text", text: time }
-              ]
-            }
+    await axios.post( `https://graph.facebook.com/v19.0/${PHONE_NUMBER_ID}/messages`,
+  {
+    messaging_product: "whatsapp",
+    to: mobile,
+    type: "template",
+    template: {
+      name: "appointment_confirmation",
+      language: {
+        code: "en"
+      },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: patientName },
+            { type: "text", text: doctor },
+            { type: "text", text: date },
+            { type: "text", text: time }
           ]
         }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${WHATSAPP_TOKEN}`,
-          "Content-Type": "application/json"
-        }
-      }
-    );
+      ]
+    }
+  },
+  {
+    headers: {
+      Authorization: `Bearer ${WHATSAPP_TOKEN}`,
+      "Content-Type": "application/json"
+    }
+  }
+);
 
     console.log("✅ WhatsApp sent");
 
