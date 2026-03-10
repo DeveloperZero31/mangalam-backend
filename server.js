@@ -195,7 +195,6 @@ async function sendPatientWhatsapp(
               type: "body",
               parameters: [
                 { type: "text", text: patientName },
-                { type: "text", text: doctor },
                 { type: "text", text: date },
                 { type: "text", text: time }
               ]
